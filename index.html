@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ball Brawl Dev Chat</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap');
+  :root {
+    --bg:#0a0a0f;--surface:#12121a;--border:#1e1e2e;--accent:#E84040;--accent2:#ff6b35;
+    --text:#e8e8f0;--dim:#5a5a7a;--code:#1a1a2a;--user-bg:#1a0a0a;--ai-bg:#0a0f1a;--glow:rgba(232,64,64,0.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--surface);flex-shrink:0}
+  .logo{width:36px;height:36px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 16px var(--glow);flex-shrink:0}
+  .header-info h1{font-size:15px;font-weight:800;letter-spacing:.05em}
+  .header-info p{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+  .status-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;margin-left:auto;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .context-bar{padding:8px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;background:var(--bg);flex-shrink:0}
+  .pill{font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:20px;border:1px solid var(--border);color:var(--dim)}
+  .pill.active{border-color:var(--accent);color:var(--accent)}
+  #messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+  #messages::-webkit-scrollbar{width:4px}
+  #messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  .msg{display:flex;gap:10px;animation:fadeUp .3s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .msg.user{flex-direction:row-reverse}
+  .avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px}
+  .msg.user .avatar{background:var(--accent);box-shadow:0 0 10px var(--glow)}
+  .msg.ai .avatar{background:#1a2040;border:1px solid #2a3060}
+  .bubble{max-width:82%;padding:11px 14px;border-radius:14px;font-size:13.5px;line-height:1.65;border:1px solid var(--border)}
+  .msg.user .bubble{background:var(--user-bg);border-color:rgba(232,64,64,.2);border-radius:14px 4px 14px 14px}
+  .msg.ai .bubble{background:var(--ai-bg);border-radius:4px 14px 14px 14px;border-color:rgba(100,120,255,.15)}
+  .bubble pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:8px 0;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.6;color:#a8c4ff}
+  .bubble code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--code);padding:1px 5px;border-radius:4px;color:#ff9f7a}
+  .bubble strong{color:var(--accent2)}
+  .bubble ul,.bubble ol{padding-left:18px;margin:6px 0}
+  .bubble li{margin:3px 0}
+  .bubble p+p{margin-top:6px}
+  .typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+  .typing span{width:6px;height:6px;background:var(--dim);border-radius:50%;animation:bounce 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+  .input-area{padding:12px 16px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  .quick-prompts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .qp-btn{font-size:11px;font-family:'JetBrains Mono',monospace;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;transition:all .15s;white-space:nowrap}
+  .qp-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--glow)}
+  .input-row{display:flex;gap:8px;align-items:flex-end}
+  textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:13.5px;padding:10px 13px;resize:none;outline:none;min-height:42px;max-height:120px;line-height:1.5;transition:border-color .15s}
+  textarea:focus{border-color:rgba(232,64,64,.5)}
+  textarea::placeholder{color:var(--dim)}
+  #send-btn{width:42px;height:42px;border-radius:10px;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;box-shadow:0 0 12px var(--glow)}
+  #send-btn:hover{background:#c0392b;transform:scale(1.05)}
+  #send-btn:disabled{background:var(--border);box-shadow:none;cursor:not-allowed;transform:none}
+  #key-bar{padding:10px 16px;background:#0f0a00;border-bottom:1px solid #3a2800;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
+  #key-bar label{font-size:12px;color:#fbbf24;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+  #key-input{flex:1;min-width:180px;background:#1a1200;border:1px solid #3a2800;border-radius:8px;color:#fde68a;font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px;outline:none}
+  #key-input:focus{border-color:#fbbf24}
+  #key-save{padding:6px 14px;background:#fbbf24;border:none;border-radius:8px;color:#000;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+  #key-save:hover{background:#f59e0b}
+  #key-status{font-size:11px;font-family:'JetBrains Mono',monospace;color:#6b7280}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚔️</div>
+  <div class="header-info">
+    <h1>BALL BRAWL DEV</h1>
+    <p>OpenRouter · free models · knows your codebase</p>
+  </div>
+  <div class="status-dot"></div>
+</header>
+
+<div id="key-bar">
+  <label>🔑 OpenRouter API Key:</label>
+  <input id="key-input" type="password" placeholder="sk-or-..." spellcheck="false"/>
+  <button id="key-save" onclick="saveKey()">Save</button>
+  <span id="key-status">Get a free key at openrouter.ai</span>
+</div>
+
+<div class="context-bar">
+  <span class="pill active">6361 lines</span>
+  <span class="pill active">18 maps</span>
+  <span class="pill active">19 traits</span>
+  <span class="pill active">23 bosses</span>
+  <span class="pill active">11 weapons</span>
+  <span class="pill active">demon mode</span>
+  <span class="pill active">per-ball config</span>
+</div>
+
+<div id="messages">
+  <div class="msg ai">
+    <div class="avatar">🤖</div>
+    <div class="bubble">
+      <p><strong>Hey! I'm your Ball Brawl dev assistant.</strong> I know your full codebase (6,361 lines).</p>
+      <p style="margin-top:8px">Paste your <strong>OpenRouter API key</strong> in the bar above (free at openrouter.ai), then ask me anything — new bosses, maps, traits, bug fixes, whatever you need.</p>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="quick-prompts">
+    <button class="qp-btn" onclick="quickPrompt('Write code for a new trait with full implementation')">+ trait</button>
+    <button class="qp-btn" onclick="quickPrompt('Write code for a new map with detailed layered background')">+ map</button>
+    <button class="qp-btn" onclick="quickPrompt('Write code for a new boss with unique AI and abilities')">+ boss</button>
+    <button class="qp-btn" onclick="quickPrompt('Write code for a new weapon with unique mechanics')">+ weapon</button>
+    <button class="qp-btn" onclick="quickPrompt('What should I add next to improve the game?')">ideas?</button>
+    <button class="qp-btn" onclick="quickPrompt('Explain how the demon mode wave system works')">explain demon mode</button>
+  </div>
+  <div class="input-row">
+    <textarea id="input" placeholder="Ask about the code or request a new feature... (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
+    <button id="send-btn" onclick="sendMessage()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are an expert game developer assistant for "Ball Brawl", a TypeScript React canvas game (BallBrawl.tsx, 6361 lines).
+
+TYPES: BallShape: circle|square|triangle|hexagon. TraitId: none|vampire|berserker|ghost|tank|medic|demon|ninja|speedster|explosive|magnet|phantom|titan|hebrew|cannibal|cursed|thorns|shell|mimic. WeaponId: pistol|machinegun|shotgun|rocket|sniper|boomerang|freezeray|flamethrower|bouncy|nuke|fireball. BossId: none|lion|eagle|moose|octopus|bossdemon|hydra|golem|phoenix|kraken|cerberus|medusa|minotaur|griffin|shark|gorilla|snake|dragon|demonwizard|hellhound|infernalgolem|soulharvester|demonking. MapId: deepspace|neoncity|volcano|frozen|ocean|thunder|candy|colosseum|jungle|graveyard|crystal|bloodmoon|orbit|aurora|nebula|sakura|desert|hell.
+
+SYSTEMS: Ball physics with velocity/collision/bounce. Per-ball trait/shape/armour/weapon/size/speed in TeamBuilder UI. Boss AI state machines with ability cooldowns. 7-wave demon survival mode on Hell map (XXL). drawMapBackground(ctx,mapId,arenaR,cx,cy,t) for layered map rendering. EditorConfig: shape, hazards, weaponRate, powerupRate, roundTimer, bounciness, gravity, arenaSize, obstacles[], demonMode, tournament.
+
+PATTERNS: Single BallBrawl.tsx file. requestAnimationFrame game loop with useRef state. HTML5 Canvas 2D. React JSX for menus. For new traits: add to TraitId union + logic in trait update section. For new bosses: add to BOSS_INFO record + AI logic in updateBoss(). For new maps: add to MAPS array + case in drawMapBackground().
+
+Give exact TypeScript code with precise location instructions. Be concise and complete.`;
+
+const history = [];
+let loading = false;
+let groqKey = localStorage.getItem("or_key") || '';
+
+if (groqKey) {
+  document.getElementById('key-input').value = groqKey;
+  document.getElementById('key-status').textContent = '✅ Key loaded';
+  document.getElementById('key-status').style.color = '#22c55e';
+}
+
+function saveKey() {
+  const val = document.getElementById('key-input').value.trim();
+  if (!val.startsWith('sk-or-')) {
+    document.getElementById('key-status').textContent = '❌ Key must start with sk-or-';
+    document.getElementById('key-status').style.color = '#ef4444';
+    return;
+  }
+  groqKey = val;
+  localStorage.setItem("or_key", val);
+  document.getElementById('key-status').textContent = '✅ Key saved!';
+  document.getElementById('key-status').style.color = '#22c55e';
+  appendMsg('ai', '<p>✅ Key saved! Ask me anything about your Ball Brawl codebase.</p>');
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatMessage(text) {
+  text = text.replace(/```[\w]*\n?([\s\S]*?)```/g, (_,c) => `<pre>${escapeHtml(c.trim())}</pre>`);
+  text = text.replace(/`([^`\n]+)`/g, (_,c) => `<code>${escapeHtml(c)}</code>`);
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  const paras = text.split(/\n\n+/);
+  return paras.map(p => {
+    p = p.trim();
+    if (!p) return '';
+    if (p.startsWith('<pre>') || p.startsWith('<ul>') || p.startsWith('<ol>')) return p;
+    if (p.match(/^[-*] /m)) {
+      const items = p.split('\n').filter(l=>l.match(/^[-*] /)).map(l=>`<li>${l.replace(/^[-*] /,'')}</li>`);
+      return `<ul>${items.join('')}</ul>`;
+    }
+    if (p.match(/^\d+\. /m)) {
+      const items = p.split('\n').filter(l=>l.match(/^\d+\. /)).map(l=>`<li>${l.replace(/^\d+\. /,'')}</li>`);
+      return `<ol>${items.join('')}</ol>`;
+    }
+    return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+}
+
+function appendMsg(role, html) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="avatar">${role==='user'?'👤':'🤖'}</div><div class="bubble">${html}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="avatar">🤖</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+function quickPrompt(text) {
+  document.getElementById('input').value = text;
+  document.getElementById('input').focus();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('input');
+  const text = input.value.trim();
+  if (!text || loading) return;
+  if (!groqKey) {
+    alert('Please enter your OpenRouter API key first (the bar at the top).');
+    return;
+  }
+  loading = true;
+  document.getElementById('send-btn').disabled = true;
+  input.value = ''; input.style.height = 'auto';
+  appendMsg('user', `<p>${escapeHtml(text)}</p>`);
+  history.push({role:'user', content:text});
+  showTyping();
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${groqKey}`, 'HTTP-Referer': 'https://ball-brawl-chat.github.io', 'X-Title': 'Ball Brawl Dev Chat'
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-3.3-8b-instruct:free',
+        max_tokens: 1024,
+        messages: [
+          {role:'system', content:SYSTEM_PROMPT},
+          ...history
+        ]
+      })
+    });
+    removeTyping();
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const reply = data.choices[0].message.content;
+    history.push({role:'assistant', content:reply});
+    appendMsg('ai', formatMessage(reply));
+  } catch(e) {
+    removeTyping();
+    history.pop();
+    appendMsg('ai', `<p style="color:#ef4444">Error: ${escapeHtml(e.message)}</p>`);
+  }
+  loading = false;
+  document.getElementById('send-btn').disabled = false;
+  input.focus();
+}
+
+document.getElementById('input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight,120)+'px';
+});
+document.getElementById('input').addEventListener('keydown', function(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+document.getElementById('key-input').addEventListener('keydown', function(e) {
+  if (e.key==='Enter') saveKey();
+});
+</script>
+</body>
+</html>
